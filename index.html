@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Метки</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+    <h2>Редактирование меток</h2>
+    <form name="userForm">
+        <input type="hidden" name="ID" value="0" />
+        <div class="form-group">
+            <label for="Name">Название дерева:</label>
+            <input class="form-control" name="Name" />
+        </div>
+        <div class="form-group">
+            <label for="Latitude">Широта:</label>
+            <input class="form-control" name="Latitude" />
+        </div>
+        <div class="form-group">
+            <label for="Longitude">Долгота:</label>
+            <input class="form-control" name="Longitude" />
+        </div>
+        <div class="form-group">
+            <label for="Высота_м">Высота (м):</label>
+            <input class="form-control" name="Высота_м" />
+        </div>
+        <div class="form-group">
+            <label for="Диаметр_ствола_см">Диаметр ствола(см):</label>
+            <input class="form-control" name="Диаметр_ствола_см" />
+        </div>
+        <div class="form-group">
+            <label for="Photo">Photo:</label>
+            <input class="form-control" name="Photo" />
+        </div>
+        <div class="panel-body">
+            <button type="submit" class="btn btn-sm btn-primary">Сохранить</button>
+            <a ID="reset" class="btn btn-sm btn-primary">Сбросить</a>
+            <a href="http://127.0.0.1:3000/map.html" class="btn btn-sm btn-primary">Перейти на карту</a>
+
+            <a ID="importGeoJSON" class="btn btn-sm btn-primary">Карта</a>
+        </div>
+    </form>
+    <table class="table table-condensed table-striped table-bordered">
+        <thead><tr><th>ID</th><th>Название дерева</th><th>Широта</th><th>Долгота</th><th>Высота (м)</th><th>Диаметр ствола(см)</th><th>Photo</th><th></th></tr></thead> 
+        <tbody>
+        </tbody>
+    </table>
+   
+    <script>
+    // Получение всех пользователей
+        async function GetTrees() {
+            // отправляет запрос и получаем ответ
+            const response = await fetch("/api/trees", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            // если запрос прошел нормально
+            if (response.ok === true) {
+                // получаем данные
+                const trees = await response.json();
+                let rows = document.querySelector("tbody"); 
+                trees.forEach(user => {
+                    // добавляем полученные элементы в таблицу
+                    rows.append(row(user));
+                });
+            }
+        }
+        // Получение одного пользователя
+        async function GetUser(ID) {
+            const response = await fetch("/api/trees/" + ID, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const user = await response.json();
+                const form = document.forms["userForm"];
+                form.elements["ID"].value = user.ID;
+                form.elements["Name"].value = user.Name;
+                form.elements["Latitude"].value = user.Latitude;
+                form.elements["Longitude"].value = user.Longitude;
+                form.elements["Высота_м"].value = user.Высота_м;
+                form.elements["Диаметр_ствола_см"].value = user.Диаметр_ствола_см;
+                form.elements["PhotoS"].value = user.PhotoS;
+              
+            }
+        }
+        // Добавление пользователя
+        async function CreateUser(treeName, treeLat, treeLon, treeH, trunk, treePh) {
+  
+            const response = await fetch("api/trees", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    Name: treeName,
+                    Latitude: treeLat,
+                    Longitude: treeLon,
+                    Высота_м: treeH,
+                    Диаметр_ствола_см: trunk,
+                    Photo: treePh
+                })
+            });
+            if (response.ok === true) {
+                const user = await response.json();
+                reset();
+                document.querySelector("tbody").append(row(user));
+            }
+        }
+        // Изменение пользователя
+        async function EditUser(userId, treeName, treeLat,treeLon,treeH, trunk, treePh) {
+            const response = await fetch("api/trees", {
+                method: "PUT",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ID: userId,
+                    Name: treeName,
+                    Latitude: treeLat,
+                    Longitude: treeLon,
+                    Высота_м: treeH,
+                    Диаметр_ствола_см: trunk,
+                    Photo: treePh
+                })
+            });
+            if (response.ok === true) {
+                const user = await response.json();
+                reset();
+                document.querySelector("tr[data-rowid='" + user.ID + "']").replaceWith(row(user));
+            }
+        }
+        // Удаление пользователя
+        async function DeleteUser(ID) {
+            const response = await fetch("/api/trees/" + ID, {
+                method: "DELETE",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const user = await response.json();
+                document.querySelector("tr[data-rowid='" + user.ID + "']").remove();
+            }
+        }
+  
+        // сброс формы
+        function reset() {
+            const form = document.forms["userForm"];
+            form.reset();
+            form.elements["ID"].value = 0;
+        }
+        // создание строки для таблицы
+        function row(user) {
+  
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-rowid", user.ID);
+  
+            const idTd = document.createElement("td");
+            idTd.append(user.ID);
+            tr.append(idTd);
+  
+            const nameTd = document.createElement("td");
+            nameTd.append(user.Name);
+            tr.append(nameTd);
+  
+            const ageTd = document.createElement("td");
+            ageTd.append(user.Latitude);
+            tr.append(ageTd);
+
+            const lonTd = document.createElement("td");
+            lonTd.append(user.Longitude);
+            tr.append(lonTd);
+
+            const heighTd = document.createElement("td");
+            heighTd.append(user.Высота_м);
+            tr.append(heighTd);
+
+            const trunkTd = document.createElement("td");
+            trunkTd.append(user.Диаметр_ствола_см);
+            tr.append(trunkTd);
+
+            const treePhTd = document.createElement("td");
+            treePhTd.append(user.Photo);
+            tr.append(treePhTd);
+              
+            const linksTd = document.createElement("td");
+  
+            const editLink = document.createElement("a");
+            editLink.setAttribute("data-id", user.ID);
+            editLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            editLink.append("Изменить");
+            editLink.addEventListener("click", e => {
+  
+                e.preventDefault();
+                GetUser(user.ID);
+            });
+            linksTd.append(editLink);
+  
+            const removeLink = document.createElement("a");
+            removeLink.setAttribute("data-id", user.ID);
+            removeLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            removeLink.append("Удалить");
+            removeLink.addEventListener("click", e => {
+  
+                e.preventDefault();
+                DeleteUser(user.ID);
+            });
+  
+            linksTd.append(removeLink);
+            tr.appendChild(linksTd);
+  
+            return tr;
+        }
+        // сброс значений формы
+        document.getElementById("reset").click(function (e) {
+  
+            e.preventDefault();
+            reset();
+        });
+  
+        document.getElementById("importGeoJSON").click(function (e) {
+            e.preventDefault();
+            console.log('Превед!!!');
+        });
+
+
+// отправка формы
+        document.forms["userForm"].addEventListener("submit", e => {
+            e.preventDefault();
+            const form = document.forms["userForm"];
+            const ID = form.elements["ID"].value;
+            const name = form.elements["Name"].value;
+            const treeLat = form.elements["Latitude"].value;
+            const treeLon = form.elements["Longitude"].value;
+            const treeH = form.elements["Высота_м"].value;
+            const trunk = form.elements["Диаметр_ствола_см"].value;
+            const treePh = form.elements["Photo"].value;
+            if (ID == 0)
+                CreateUser(name,treeLat, treeLon, treeH, trunk, treePh);
+            else
+                EditUser(ID, name, treeLat, treeLon, treeH, trunk, treePh);
+        });
+  
+        // загрузка деревьев
+        GetTrees();
+    </script>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-analytics.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+      
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+          apiKey: "AIzaSyCMBDwJ5sKRe5WDHehpMghAXljuj13kEuA",
+          authDomain: "treeudgu.firebaseapp.com",
+          projectId: "treeudgu",
+          storageBucket: "treeudgu.appspot.com",
+          messagingSenderId: "993503970143",
+          appId: "1:993503970143:web:7df358b818cb46b8a92cea",
+          measurementId: "G-HWVH717ZE2"
+        };
+      
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+      </script>
+</body>
+</html>
